@@ -1,0 +1,29 @@
+# Core UI & API
+gradio>=4.38.1
+fastapi>=0.111.0
+uvicorn>=0.30.1
+python-multipart>=0.0.9
+
+# LangChain
+langchain>=0.2.10
+langchain-community>=0.2.10
+langchain-openai>=0.1.17
+langchain-core>=0.2.24
+langchain-text-splitters>=0.2.2
+
+# Document loaders
+pypdf>=6.7.1
+docx2txt>=0.8
+
+# Embeddings & Vector DB
+sentence-transformers>=3.0.1
+faiss-cpu>=1.9.0
+torch>=2.10.0
+transformers>=4.57.0
+
+# LLM backend (OpenRouter via OpenAI-compatible API)
+openai>=1.37.0
+tiktoken>=0.7.0
+
+# Utils
+python-dotenv>=1.2.1
