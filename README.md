@@ -1,9 +1,9 @@
-# 📚 نظام Q&A للمستندات
-> نظام ذكي للأسئلة والأجوبة مبني على RAG (Retrieval-Augmented Generation) مع دعم البث الفوري واكتشاف اللغة
+# 📚 Document Q&A System
+> Intelligent Q&A system based on RAG (Retrieval-Augmented Generation) with streaming support and auto language detection.
 
 ---
 
-## 🏗️ معمارية النظام
+## 🏗️ System Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -36,114 +36,141 @@
 
 ---
 
-## 🚀 التثبيت والتشغيل
+## 🚀 Installation & Usage
 
-### المتطلبات
+### Prerequisites
 - Python 3.10+
-- 4GB RAM على الأقل
-- مفتاح [OpenRouter API](https://openrouter.ai) (مجاني متاح)
+- At least 4GB RAM
+- [OpenRouter API](https://openrouter.ai) Key (Free tier available)
 
-### الخطوات
+### Steps
 
-**الطريقة السريعة (Windows):**
+**Quick Setup (Windows):**
 ```bat
 setup.bat
 ```
-السكريبت هيعمل كل حاجة تلقائياً: venv، تثبيت المكتبات، المجلدات، وإنشاء `.env`
+The script will automate everything: venv creation, installing dependencies, creating directories, and generating `.env`.
 
-**أو يدوياً:**
+**Or Manually:**
 ```bash
-# 1. تثبيت المكتبات
+# 1. Install dependencies
 pip install -r requirements.txt
 
-# 2. إعداد المتغيرات البيئية
+# 2. Setup environment variables
 copy .env.example .env
-# عدّل .env وأضف OPENROUTER_API_KEY
+# Edit .env and add your OPENROUTER_API_KEY
 
-# 3. تشغيل الواجهة
-python app\main.py
+# 3. Run the UI
+python -m app.main
 ```
 
-افتح المتصفح على: **http://localhost:7860**
+Open your browser at: **http://localhost:7860**
 
 ---
 
-## 📁 هيكل المشروع
+## 📁 Project Structure
 
 ```
 project/
 ├── app/
-│   ├── main.py          # الواجهة الرئيسية (Gradio) + كل منطق RAG
-│   ├── api.py           # REST API (FastAPI) — اختياري
-│   ├── evaluator.py     # تقييم جودة الإجابات
+│   ├── core/
+│   │   ├── config.py             # Constants and configs
+│   │   ├── locks.py              # Threading locks
+│   │   └── exceptions.py         # Custom application exceptions
+│   │
+│   ├── services/
+│   │   ├── chat_service.py       # Handles chat messages and logic
+│   │   ├── ingestion_service.py  # Handles document processing
+│   │   └── retrieval_service.py  # LangChain pipelines and retrieval
+│   │
+│   ├── llm/
+│   │   ├── llm_factory.py        # Chat LLM initialization (OpenRouter)
+│   │   └── embeddings_factory.py # Embeddings instantiation (HuggingFace)
+│   │
+│   ├── evaluation/
+│   │   ├── metrics.py            # Answer evaluation formulas
+│   │   └── evaluator.py          # Quality and latency tests runner
+│   │
+│   ├── session/
+│   │   └── manager.py            # Global dict storage for state
+│   │
+│   ├── utils/
+│   │   └── helpers.py            # Reusable text processors
+│   │
+│   ├── api.py                    # REST API (FastAPI) — Optional
+│   ├── ui.py                     # Gradio UI components and event handlers
+│   └── main.py                   # Entry point for the application
+│
 ├── data/
-│   ├── uploads/         # الملفات المرفوعة
-│   ├── vectordb/        # قاعدة بيانات FAISS (حسب session)
-│   └── cache/           # تخزين مؤقت للـ embeddings
-├── .env                 # المتغيرات البيئية (لا ترفعه على GitHub)
-├── .env.example         # قالب المتغيرات البيئية (آمن للرفع)
-├── requirements.txt
-├── setup.bat            # سكريبت الإعداد (Windows)
+│   ├── uploads/                  # Uploaded documents
+│   ├── vectordb/                 # FAISS vector database (by session)
+│   └── cache/                    # Embeddings cache
+│
+├── tests/                        # Directory for application tests
+│
+├── .env                          # Environment variables (Do NOT push to GitHub)
+├── .env.example                  # Environment template (Safe to push)
+├── requirements.txt           
 └── README.md
 ```
 
 ---
 
-## ⚙️ متغيرات البيئة
+## ⚙️ Environment Variables
 
-| المتغير | القيمة الافتراضية | الوصف |
-|---------|------------------|--------|
-| `OPENROUTER_API_KEY` | — | مفتاح OpenRouter API **(مطلوب)** |
-| `base_url` | `https://openrouter.ai/api/v1` | رابط الـ API |
-| `OPENROUTER_MODEL` | `stepfun/step-3.5-flash:free` | اسم النموذج |
-| `CHUNK_SIZE` | `1000` | حجم القطعة النصية |
-| `CHUNK_OVERLAP` | `200` | التداخل بين القطع |
-| `TOP_K_RESULTS` | `4` | عدد النتائج المسترجعة |
-| `MAX_FILE_SIZE_MB` | `50` | أقصى حجم للملف |
-| `PORT` | `7860` | منفذ Gradio |
-
----
-
-## 🌟 المميزات
-
-| الميزة | التفاصيل |
-|--------|----------|
-| 🌍 **اكتشاف اللغة** | يرد بالعربية أو الإنجليزية تلقائياً حسب سؤالك |
-| ⚡ **بث فوري** | الإجابات تظهر token by token |
-| 🧮 **LaTeX** | دعم كامل لعرض المعادلات الرياضية |
-| 💬 **ذاكرة المحادثة** | يتذكر آخر 10 رسائل لكل session |
-| 📄 **أنواع الملفات** | PDF · DOCX · TXT |
-| 🔍 **MMR Search** | بحث متنوع يتجنب التكرار |
-| 📊 **تقييم تلقائي** | يقيّم جودة الإجابات ويحفظ التقرير |
-| 🔧 **استعادة الجلسة** | يعيد تحميل الـ vectorstore من الديسك عند الحاجة |
+| Variable | Default Value | Description |
+|----------|---------------|-------------|
+| `OPENROUTER_API_KEY` | — | OpenRouter API Key **(Required)** |
+| `base_url` | `https://openrouter.ai/api/v1` | API base URL |
+| `OPENROUTER_MODEL` | `stepfun/step-3.5-flash:free` | Model name |
+| `CHUNK_SIZE` | `1000` | Text chunk size |
+| `CHUNK_OVERLAP` | `200` | Overlap between chunks |
+| `TOP_K_RESULTS` | `4` | Number of retrieved results |
+| `MAX_FILE_SIZE_MB` | `50` | Maximum allowed file size |
+| `PORT` | `7860` | Gradio Port |
 
 ---
 
-## 📊 مؤشرات الأداء
+## 🌟 Features
 
-| المؤشر | الهدف | الحالة |
-|--------|-------|--------|
-| رفع الملف ومعالجته | ≤ 3s | ✅ |
-| الرد الكامل (بث) | ≤ 5s | ✅ |
+| Feature | Details |
+|---------|---------|
+| 🌍 **Auto Language** | Responds in English or Arabic automatically based on your question |
+| ⚡ **Instant Stream** | Answers appear token by token continuously |
+| 🧮 **LaTeX** | Full support for displaying mathematical equations |
+| 💬 **Chat Memory** | Remembers the last 10 messages per session |
+| 📄 **File Types** | PDF · DOCX · TXT |
+| 🔍 **MMR Search** | Diverse retrieval to avoid repetition |
+| 📊 **Auto Evaluation** | Evaluates answer quality and saves the report |
+| 🔧 **Session Restore** | Reloads the vectorstore from disk when needed |
+
+---
+
+## 📊 Performance Indicators
+
+| Metric | Target | Status |
+|--------|--------|--------|
+| File Upload & Process | ≤ 3s | ✅ |
+| Full Answer (Streaming)| ≤ 5s | ✅ |
 | Retrieval (MMR) | < 1s | ✅ |
-| دقة الإجابة | > 80% | يعتمد على النموذج |
+| Answer Accuracy | > 80% | Depends on the Model |
 
 ---
 
-## 🔒 الأمان
+## 🔒 Security
 
-- ✅ التخزين محلي فقط — لا بيانات تُرسل إلا للـ LLM
-- ✅ التحقق من نوع الملف وحجمه قبل المعالجة
-- ✅ تنظيف المدخلات
-- ✅ تنظيف تلقائي للجلسات القديمة (كل ساعتين)
-- ⚠️ لا ترفع ملف `.env` على GitHub
+- ✅ Storage is local only — data is only sent to the LLM.
+- ✅ Validates file type and size before processing.
+- ✅ Input sanitization.
+- ✅ Auto cleanup for old sessions (every 2 hours).
+- ⚠️ Do NOT upload your `.env` file to GitHub.
 
 ---
 
-## 📚 التقنيات المستخدمة
+## 📚 Tech Stack
 
-| الطبقة | التقنية |
-|--------|---------|
+| Layer | Technology |
+|-------|------------|
 | Frontend | Gradio 4+ |
 | LLM Orchestration | LangChain (LCEL) |
 | Embeddings | HuggingFace `all-MiniLM-L6-v2` |
@@ -154,27 +181,27 @@ project/
 
 ---
 
-## 🧪 تشغيل التقييم
+## 🧪 Running Evaluator
 
 ```python
-from app.evaluator import SystemEvaluator
+from app.evaluation.evaluator import SystemEvaluator
 
 eval = SystemEvaluator()
 
-# اختبار إجابة
+# Test an answer
 result = eval.evaluate_answer(
-    question="ما هو موضوع المستند؟",
+    question="What is the document about?",
     answer=answer,
-    expected_keywords=["موضوع", "مستند"],
+    expected_keywords=["subject", "document"],
     latency=2.1
 )
 
-# اختبار الأداء
-perf = eval.latency_test(ask_question, "ما هو الموضوع؟", runs=5)
+# Test latency performance
+perf = eval.latency_test(ask_question, "What is the subject?", runs=5)
 eval.print_summary()
 
-# حفظ التقرير
+# Save the report
 eval.save_report("eval_report.json")
 ```
 
-> 📝 يتم التقييم تلقائياً بعد كل سؤال حقيقي ويُحفظ في `eval_report.json`
+> 📝 Evaluation happens automatically after every real question and is saved inside `eval_report.json`.

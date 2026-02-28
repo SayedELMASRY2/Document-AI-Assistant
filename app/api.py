@@ -72,7 +72,7 @@ async def upload_file(file: UploadFile = File(...)):
 @app.post("/process", tags=["Files"])
 async def process_file(filename: str):
     """معالجة ملف مرفوع"""
-    from app.main import ingest_document
+    from app.services.ingestion_service import ingest_document
     
     file_path = UPLOAD_DIR / filename
     if not file_path.exists():
@@ -101,7 +101,7 @@ async def get_status():
 @app.post("/ask", response_model=AskResponse, tags=["Chat"])
 async def ask(request: AskRequest):
     """طرح سؤال على المستند"""
-    from app.main import ask_question
+    from app.services.chat_service import ask_question_stream as ask_question
     
     session_id = request.session_id or str(uuid.uuid4())
     start = time.time()
@@ -119,7 +119,7 @@ async def ask(request: AskRequest):
 @app.get("/history/{session_id}", tags=["Chat"])
 async def get_history(session_id: str):
     """سجل المحادثة"""
-    from app.main import sessions
+    from app.session.manager import _sessions as sessions
     
     history = sessions.get(session_id, [])
     return {"session_id": session_id, "messages": history}
@@ -127,7 +127,7 @@ async def get_history(session_id: str):
 @app.delete("/session/{session_id}", tags=["Chat"])
 async def delete_session(session_id: str):
     """حذف جلسة"""
-    from app.main import sessions
+    from app.session.manager import _sessions as sessions
     
     if session_id in sessions:
         del sessions[session_id]
