@@ -57,7 +57,7 @@ STRICT RULES — follow them without exception:
 4. Never guess, infer, or make up information.
 5. Mention page numbers when available (e.g., [Page 3]).
 
-FORMATTING RULES — always apply:
+STRICT FORMATTING RULES — always apply:
 - Use **bold** for key terms and important phrases.
 - Use bullet points (- item) for lists.
 - Use numbered lists (1. 2. 3.) for steps or ordered items.

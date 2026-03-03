@@ -74,9 +74,9 @@ Open your browser at: **http://localhost:7860**
 project/
 ├── app/
 │   ├── core/
-│   │   ├── config.py             # Constants and configs
-│   │   ├── locks.py              # Threading locks
-│   │   └── exceptions.py         # Custom application exceptions
+│   │ ├── config.py             # Constants and configs
+│   │ ├── locks.py              # Threading locks
+│   │ └── exceptions.py         # Custom application exceptions
 │   │
 │   ├── services/
 │   │   ├── chat_service.py       # Handles chat messages and logic

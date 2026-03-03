@@ -8,9 +8,12 @@ from langchain_community.vectorstores import FAISS
 from app.core.config import MAX_FILE_MB, VECTORDB_DIR
 from app.llm.embeddings_factory import get_embeddings
 from app.services.retrieval_service import build_chain
+from app.services.ocr_service import ocr_image_file, ocr_pdf_file
 from app.session.manager import set_session, get_session
 
 logger = logging.getLogger(__name__)
+
+IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".tiff", ".bmp"}
 
 def ingest_document(file_path: str, filename: str, session_id: str):
     try:
@@ -24,24 +27,42 @@ def ingest_document(file_path: str, filename: str, session_id: str):
         ext = path.suffix.lower()
         if ext == ".pdf":
             loader = PyPDFLoader(file_path)
+            docs = loader.load()
+
+            # --- OCR fallback for scanned PDFs ---
+            if not docs or all(not d.page_content.strip() for d in docs):
+                yield "🔍 Scanned PDF detected — running OCR (this may take a moment)..."
+                try:
+                    docs = ocr_pdf_file(file_path)
+                except RuntimeError as ocr_err:
+                    yield f"❌ OCR failed: {ocr_err}"
+                    return
         elif ext in [".docx", ".doc"]:
             loader = Docx2txtLoader(file_path)
+            docs = loader.load()
         elif ext == ".txt":
             loader = TextLoader(file_path, encoding="utf-8")
+            docs = loader.load()
+        elif ext in IMAGE_EXTENSIONS:
+            yield "🔍 Running OCR on image..."
+            try:
+                docs = ocr_image_file(file_path)
+            except Exception as ocr_err:
+                yield f"❌ OCR failed: {ocr_err}"
+                return
         else:
-            yield f"❌ Unsupported type: '{ext}'. Use PDF, DOCX, or TXT."
+            yield f"❌ Unsupported type: '{ext}'. Use PDF, DOCX, TXT, or an image (PNG/JPG/JPEG/TIFF/BMP)."
             return
 
-        docs = loader.load()
         if not docs:
-            yield "❌ File is empty or unreadable."
+            yield "❌ No text could be extracted from the file."
             return
 
         splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
         chunks = splitter.split_documents(docs)
 
         if not chunks:
-            yield "❌ No text extracted. Scanned PDF? Try a text-based one."
+            yield "❌ Could not split document into chunks. The file may contain no usable text."
             return
 
         yield f"🧠 Generating embeddings (HuggingFace)..."
