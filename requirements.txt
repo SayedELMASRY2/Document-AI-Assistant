@@ -15,6 +15,11 @@ langchain-text-splitters>=0.2.2
 pypdf>=6.7.1
 docx2txt>=0.8
 
+# OCR support
+pytesseract>=0.3.13
+pymupdf>=1.24.0
+Pillow>=10.0.0
+
 # Embeddings & Vector DB
 sentence-transformers>=3.0.1
 faiss-cpu>=1.9.0
@@ -27,8 +32,3 @@ tiktoken>=0.7.0
 
 # Utils
 python-dotenv>=1.2.1
-
-# OCR
-pytesseract>=0.3.13
-Pillow>=10.0.0
-pymupdf>=1.24.0

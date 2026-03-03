@@ -1,5 +1,5 @@
-# 📚 Document Q&A System
-> Intelligent Q&A system based on RAG (Retrieval-Augmented Generation) with streaming support and auto language detection.
+# 📚 DocuMind AI — Document Q&A System
+> Intelligent Q&A system based on RAG (Retrieval-Augmented Generation) with streaming support, auto language detection, and **OCR support for scanned PDFs & images**.
 
 ---
 
@@ -18,9 +18,10 @@
 │  │  Ingestion  │  │  Retrieval   │  │    Answer Gen  │  │
 │  │  Pipeline   │  │  Pipeline    │  │    Pipeline    │  │
 │  │             │  │              │  │                │  │
-│  │ Load → Split│  │ Embed Query  │  │ Build Prompt   │  │
-│  │ → Embed     │  │ → MMR Search │  │ → Stream LLM   │  │
-│  │ → Store     │  │ → Top-K      │  │ → Citations    │  │
+│  │ Load → OCR? │  │ Embed Query  │  │ Build Prompt   │  │
+│  │ → Split     │  │ → MMR Search │  │ → Stream LLM   │  │
+│  │ → Embed     │  │ → Top-K      │  │ → Citations    │  │
+│  │ → Store     │  │              │  │                │  │
 │  └─────────────┘  └──────────────┘  └────────────────┘  │
 └──────────────────────┬──────────────────────────────────┘
                        │
@@ -42,6 +43,7 @@
 - Python 3.10+
 - At least 4GB RAM
 - [OpenRouter API](https://openrouter.ai) Key (Free tier available)
+- **[Tesseract OCR](https://github.com/UB-Mannheim/tesseract/wiki)** *(required for scanned PDF / image OCR)*
 
 ### Steps
 
@@ -66,6 +68,8 @@ python -m app.main
 
 Open your browser at: **http://localhost:7860**
 
+> **OCR Note:** To enable OCR for scanned PDFs and images, install [Tesseract](https://github.com/UB-Mannheim/tesseract/wiki) and make sure it's in your system `PATH`. Arabic OCR requires the `ara` language pack (selectable during Tesseract installation).
+
 ---
 
 ## 📁 Project Structure
@@ -80,7 +84,8 @@ project/
 │   │
 │   ├── services/
 │   │   ├── chat_service.py       # Handles chat messages and logic
-│   │   ├── ingestion_service.py  # Handles document processing
+│   │   ├── ingestion_service.py  # Handles document processing (+ OCR fallback)
+│   │   ├── ocr_service.py        # OCR engine (Tesseract + PyMuPDF)
 │   │   └── retrieval_service.py  # LangChain pipelines and retrieval
 │   │
 │   ├── llm/
@@ -139,9 +144,11 @@ project/
 | ⚡ **Instant Stream** | Answers appear token by token continuously |
 | 🧮 **LaTeX** | Full support for displaying mathematical equations |
 | 💬 **Chat Memory** | Remembers the last 10 messages per session |
-| 📄 **File Types** | PDF · DOCX · TXT |
+| 📄 **File Types** | PDF · DOCX · TXT · PNG · JPG · TIFF · BMP |
 | 🔍 **MMR Search** | Diverse retrieval to avoid repetition |
-| 📊 **Auto Evaluation** | Evaluates answer quality and saves the report |
+| � **Auto OCR** | Automatically detects scanned PDFs and extracts text via Tesseract |
+| 🖼️ **Image Support** | Upload PNG/JPG/TIFF images and chat with their content |
+| �📊 **Auto Evaluation** | Evaluates answer quality and saves the report |
 | 🔧 **Session Restore** | Reloads the vectorstore from disk when needed |
 
 ---
@@ -153,6 +160,7 @@ project/
 | File Upload & Process | ≤ 3s | ✅ |
 | Full Answer (Streaming)| ≤ 5s | ✅ |
 | Retrieval (MMR) | < 1s | ✅ |
+| OCR Processing | varies by page count | ✅ |
 | Answer Accuracy | > 80% | Depends on the Model |
 
 ---
@@ -178,6 +186,8 @@ project/
 | Vector DB | FAISS |
 | LLM Provider | OpenRouter API |
 | Document Loaders | PyPDF · Docx2txt · TextLoader |
+| OCR Engine | Tesseract via `pytesseract` |
+| PDF Renderer | PyMuPDF (no Poppler required) |
 
 ---
 

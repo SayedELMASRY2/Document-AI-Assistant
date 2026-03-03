@@ -352,7 +352,7 @@ def build_ui():
                 file_input = gr.File(
                     label="",
                     file_types=[".pdf", ".docx", ".doc", ".txt",
-                                ".png", ".jpg", ".jpeg", ".tiff", ".bmp"],
+                                ".png", ".jpg", ".jpeg", ".tiff", ".tif", ".bmp"],
                     elem_classes="mono",
                 )
                 upload_btn = gr.Button("⬆  Process Document", elem_classes="upload-btn")
@@ -364,8 +364,8 @@ def build_ui():
                 gr.HTML("""
                 <div style='font-size:.8rem;color:#78716c;line-height:1.9'>
                     • Supports <b style='color:#fb923c'>PDF, DOCX, TXT</b><br>
+                    • Scanned PDFs <b style='color:#fb923c'>auto-OCR'd</b> ✨<br>
                     • Images: <b style='color:#fb923c'>PNG, JPG, TIFF, BMP</b><br>
-                    • Scanned PDFs → <b style='color:#fb923c'>auto OCR</b><br>
                     • Ask in plain language<br>
                     • Sources cited automatically<br>
                     • Max file size: <b style='color:#fb923c'>50 MB</b>
