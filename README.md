@@ -37,7 +37,174 @@
 
 ---
 
-## 🚀 Installation & Usage
+## 🔄 RAG Pipeline Flow
+
+```mermaid
+flowchart TD
+    A([👤 User]) -->|Uploads file| B[File Upload\nGradio UI → ingestion_service]
+    B -->|Size check ≤ 50 MB| C{File Type?}
+
+    C -->|PDF| D[PyPDF Load]
+    C -->|DOCX| E[docx2txt]
+    C -->|TXT| F[TextLoader]
+    C -->|PNG / JPG / TIFF / BMP| G[OCR Pipeline\nTesseract + Pillow\nara+eng]
+
+    D --> H{Scanned PDF?\navg chars/page < 50}
+    H -->|Yes| I[OCR Pipeline\nPyMuPDF 300 DPI\n+ Tesseract OCR]
+    H -->|No| J[Text Ready ✓]
+    E --> J
+    F --> J
+    G --> J
+    I --> J
+
+    J --> K[Text Splitting\nRecursiveCharacterTextSplitter\nChunk: 1000 chars · Overlap: 200]
+    K --> L[Embeddings Generation\nHuggingFace sentence-transformers]
+    L --> M[Save to FAISS\ndata/vectordb per session]
+    M --> N([✅ Document Ready!])
+
+    N --> O([👤 User asks a question])
+    O --> P[Embed Query\nHuggingFace sentence-transformers]
+    P --> Q[Semantic Search in FAISS\nCosine Similarity · Top-K chunks]
+    Q --> R[Send to LLM via OpenRouter\nPrompt = Question + Context + History]
+    R -->|Streaming| S[Answer + Sources\nGradio Chat UI]
+    S --> T([👤 User sees the answer])
+```
+
+### 📋 Step-by-step Pipeline
+
+| Step | What happens |
+|------|-------------|
+| **1. Upload** | User uploads a file via the sidebar |
+| **2. Extract** | PDF (text) → PyPDF · PDF (scanned) → PyMuPDF + Tesseract · Image → Tesseract · DOCX → docx2txt · TXT → TextLoader |
+| **3. Split** | Text split into 1000-char chunks with 200-char overlap |
+| **4. Embed** | Each chunk converted to a numeric vector (HuggingFace) |
+| **5. Store** | Vectors saved in a per-session FAISS index |
+| **6. Query** | User question embedded and matched against stored chunks |
+| **7. Generate** | Matched chunks + question sent to LLM (OpenRouter) |
+| **8. Stream** | Answer streamed token-by-token to the chat UI + sources cited |
+
+### 🗺️ Detailed Project Flowchart
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                       DocuMind AI — RAG Pipeline                        │
+└─────────────────────────────────────────────────────────────────────────┘
+
+╔══════════════════╗
+║      User        ║
+╚════════╤═════════╝
+         │
+         │  Uploads a document
+         ▼
+╔══════════════════════════════════════════════════╗
+║           File Upload (ingestion_service)         ║
+║        Gradio UI  ──►  Size check (Max 50 MB)    ║
+╚════════════════════╤═════════════════════════════╝
+                     │
+                     ▼
+        ┌─────────────────────────┐
+        │      File Type?         │
+        └──┬──────┬──────┬───┬───┘
+           │      │      │   │
+        PDF│  DOCX│   TXT│  IMG│ (PNG/JPG/TIFF/BMP)
+           │      │      │   │
+           ▼      │      │   ▼
+ ┌──────────────┐ │      │ ┌──────────────────────────┐
+ │  PyPDF Load  │ │      │ │  OCR Pipeline             │
+ └──────┬───────┘ │      │ │  Tesseract + Pillow        │
+        │         │      │ │  (ara+eng languages)       │
+        │         │      │ └────────────┬──────────────┘
+        │  ┌──────┘      │              │
+        │  │             ▼              │
+        │  │  ┌──────────────┐          │
+        │  │  │  docx2txt    │          │
+        │  │  └──────┬───────┘          │
+        │  │         │    ┌─────────────┘
+        ▼  ▼         ▼    ▼
+┌────────────────────────────────────────────────┐
+│   Scanned PDF? is_scanned_pdf()                │
+│   avg chars/page < 50 ?                        │
+└─────────────────────┬──────────────────────────┘
+          YES         │         NO
+         ┌────────────┘     └──────────────────┐
+         ▼                                     ▼
+┌─────────────────────────┐       ┌──────────────────────┐
+│  OCR Pipeline            │       │  Text Ready ✓        │
+│  PyMuPDF (300 DPI)      │       └──────────┬───────────┘
+│  + Tesseract OCR        │                  │
+└────────────┬────────────┘                  │
+             └──────────────────┬────────────┘
+                                │
+                                ▼
+╔═══════════════════════════════════════════════════════╗
+║          Text Splitting                               ║
+║    RecursiveCharacterTextSplitter                     ║
+║    Chunk Size: 1000 chars  |  Overlap: 200 chars      ║
+╚═══════════════════════════╤═══════════════════════════╝
+                            │
+                            ▼
+╔═══════════════════════════════════════════════════════╗
+║          Embeddings Generation                        ║
+║    HuggingFace sentence-transformers                  ║
+║    (each Chunk → numeric Vector)                      ║
+╚═══════════════════════════╤═══════════════════════════╝
+                            │
+                            ▼
+╔═══════════════════════════════════════════════════════╗
+║          Save to FAISS Vector Store                   ║
+║    FAISS Index  ──►  data/vectordb/{session_id}       ║
+╚═══════════════════════════╤═══════════════════════════╝
+                            │
+              ✅ Document Ready!
+                            │
+════════════════════════════╪═══════════════════════════
+             User asks a question
+════════════════════════════╪═══════════════════════════
+                            │
+╔═══════════════════════════╧═══════════════════════════╗
+║          User Query                                   ║
+║          Gradio Chat UI  ──►  chat_service            ║
+╚═══════════════════════════╤═══════════════════════════╝
+                            │
+                            ▼
+╔═══════════════════════════════════════════════════════╗
+║          Embed Query                                  ║
+║    HuggingFace sentence-transformers                  ║
+╚═══════════════════════════╤═══════════════════════════╝
+                            │
+                            ▼
+╔═══════════════════════════════════════════════════════╗
+║          Semantic Search in FAISS                     ║
+║    Cosine Similarity  ──►  Top-K Chunks               ║
+╚═══════════════════════════╤═══════════════════════════╝
+                            │
+                            ▼
+╔═══════════════════════════════════════════════════════╗
+║          LLM via OpenRouter API                       ║
+║    Prompt = Question + Context (Chunks) + History     ║
+╚═══════════════════════════╤═══════════════════════════╝
+                            │  Streaming ▼
+╔═══════════════════════════════════════════════════════╗
+║          Answer + Sources                             ║
+║    Gradio Chat UI  ◄──  Streaming Response            ║
+║    📄 Sources with page number & excerpt              ║
+╚═══════════════════════════════════════════════════════╝
+                            │
+                            ▼
+                    ╔══════════════════╗
+                    ║  User sees the   ║
+                    ║  answer  ✅      ║
+                    ╚══════════════════╝
+
+LEGEND:
+  ╔══╗  Main Process
+  ┌──┐  Decision / Branch
+  ──►   Flow Direction
+```
+
+---
+
+
 
 ### Prerequisites
 - Python 3.10+
